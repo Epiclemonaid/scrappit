@@ -2,6 +2,7 @@ package reddit
 
 import (
   "reddit-scraper/http"
+  "reddit-scraper/gfycat"
   "regexp"
   "strings"
 )
@@ -9,27 +10,29 @@ import (
 
 type Post struct {
   Data struct {
-    Domain string `json: "domain"`
-    Subreddit string `json: "subreddit"`
-    Title string `json: "title"`
-    Permalink string `json: "permalink"`
-    Url string `json: "url"`
-  } `json: "data"`
+    Domain string `json:"domain"`
+    Subreddit string `json:"subreddit"`
+    Title string `json:"title"`
+    Permalink string `json:"permalink"`
+    Url string `json:"url"`
+  } `json:"data"`
 }
 
 
 type ListingJson struct {
   Data struct {
-    Children []Post {
-    } `json: "children"`
-  } `json: "data"`
+    Children []Post `json:"children"`
+  } `json:"data"`
 }
 
 
-func GetDownloadUrls(posts []Post) []string {
+func DownloadPosts(posts []Post) []string {
   var urls []string
   for _, post := range posts {
-    switch (post.Data.Domain) {
+    domain := post.Data.Domain
+    switch {
+    case strings.Contains(domain, "gfycat"):
+      urls = append(urls, gfycat.GetDownloadUrl(post.Data.Url))
     }
   }
   return urls
