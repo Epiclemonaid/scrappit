@@ -1,52 +1,18 @@
 package gfycat
 
 type GfyItem struct {
-  GfyId string
-  GfyName string
-  GfyNumber string
-  UserName string
-  Wdith string
-  Height string
-  FrameRate string
-  NumFrames string
-  Mp4Url string
-  WebmUrl string
-  WebpUrl string
-  MobileUrl string
-  MobilePosterUrl string
-  PosterUrl string
-  Thumb360Url string
-  Thumb360PosterUrl string
-  Thumb100PosterUrl string
-  Max5mbGif string
-  Max2mbGif string
-  MjpgUrl string
-  GifUrl string
-  GifSize string
-  Mp4Size string
-  WebmSize string
-  CreateDate string
-  Views int
-  Title string
-  ExtraLemmas []string
-  Md5 string
-  Tags []string
-  Nsfw string
-  Sar string
-  Url string
-  Source string
-  Dynamo string
-  Subreddit string
-  RedditId string
-  RedditIdText string
-  Likes string
-  Dislikes string
-  Published string
-  Description string
-  CopyrightClaimant string
+  GfyId     string  `json: "gfyId"`
+  GfyName   string  `json: "gfyName"`
+  GfyNumber string  `json: "gfyNumber"`
+  WebmUrl   string  `json: "webmUrl"`
+  GifUrl    string  `json: "gifUrl"`
+  GifSize   string  `json: "gifSize"`
+  WebmSize  string  `json: "webmSize"`
+  Title     string  `json: "title"`
+  Url       string  `json: "url"`
 }
 
 type GfyJson struct {
-  GfyItem GfyItem
-  Error string
+  GfyItem GfyItem `json: ""`
+  Error   string  `json ""`
 }
