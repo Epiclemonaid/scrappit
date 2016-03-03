@@ -1,0 +1,10 @@
+{
+  "username": null,
+  "password": null,
+  "subreddits": [
+    "/r/funny",
+    "/r/gfycats"
+  ],
+  "output": "output",
+  "stats": false
+}
