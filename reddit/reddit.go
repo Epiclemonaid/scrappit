@@ -1,6 +1,7 @@
 package reddit
 
 import (
+  "fmt"
   "reddit-scraper/http"
   "reddit-scraper/gfycat"
   "reddit-scraper/util"
@@ -38,22 +39,41 @@ type DownloadPost struct {
 func DownloadPosts(posts []Post) []DownloadPost {
   var newPosts []DownloadPost
   for _, post := range posts {
-    domain := post.Data.Domain
-    switch {
-    case strings.Contains(domain, "gfycat"):
-      // Parse the gfycat URL
-      gfyUrl, err := url.Parse(post.Data.Url)
-      util.Check(err)
+    // Parse the URL
+    newUrl, err := url.Parse(post.Data.Url)
+    util.Check(err)
 
-      newPost := DownloadPost{}
-      newPost.Name = gfyUrl.Path
-      newPost.Subreddit = post.Data.Subreddit
-      rawUrl := gfyUrl.Scheme + "://" + gfyUrl.Host + "/" + gfyUrl.Path
+    // Generate the new post data
+    newPost := DownloadPost{}
+    newPost.Subreddit = post.Data.Subreddit
+    newPost.Name = post.Data.Title
+    newPost.Url = post.Data.Url
+
+    // Regex
+    staticRegex, _ := regexp.Compile(`.+\.(jpeg|jpg|gif|png)$`)
+
+    // Find the URL type
+    switch {
+    case staticRegex.MatchString(newUrl.Path):
+      // Static file
+      newPost.Url = post.Data.Url
+
+    case strings.Contains(post.Data.Domain, "gfycat"):
+      // Gfycat
+      newPost.Name = newUrl.Path
+      rawUrl := newUrl.Scheme + "://" + newUrl.Host + "/" + newUrl.Path
       newPost.Url = gfycat.GetDownloadUrl(rawUrl)
 
-      // Add to URL list
-      newPosts = append(newPosts, newPost)
+    case strings.Contains(post.Data.Domain, "imgur"):
+      // Non-static Imgur
+      fmt.Println("Imgur:", post.Data.Url)
+
+    default:
+      fmt.Println("Unsupported URL:", post.Data.Url)
     }
+
+    // Add to URL list
+    newPosts = append(newPosts, newPost)
   }
   return newPosts
 }

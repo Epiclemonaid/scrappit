@@ -70,9 +70,9 @@ func main() {
       outputPath = outputPath + "/"
     }
     if subreddit.CustomFolderName != "" {
-      outputPath = outputPath + subreddit.CustomFolderName
+      outputPath = outputPath + subreddit.CustomFolderName + "/"
     } else {
-      outputPath = outputPath + subreddit.Name[3:]
+      outputPath = outputPath + subreddit.Name[3:] + "/"
     }
     err := os.MkdirAll(outputPath, 0755)
     util.Check(err)
@@ -101,7 +101,7 @@ func main() {
 func downloadToFolder(folder string, posts []reddit.DownloadPost, ch chan string) {
   fmt.Println("Go routine to download", len(posts), "posts")
   for _, post := range posts {
-    outputFile := folder + post.Name + ".webm"
+    outputFile := folder + post.Name
     //fmt.Println("Downloading", post.Url, "to", outputFile)
     err := http.DownloadFile(outputFile, post.Url)
     util.CheckWarn(err)
