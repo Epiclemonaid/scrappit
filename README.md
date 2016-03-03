@@ -17,6 +17,7 @@
 ## TODO
 
 * Scheduled running
+* Concurrent downloading
 * Imgur posts
 * Self.Reddit posts
 * Other links
