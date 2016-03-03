@@ -74,7 +74,7 @@ func main() {
       outputFile := outputPath + post.Name + ".webm"
       fmt.Println("Downloading", post.Url, "to", outputFile)
       err := http.DownloadFile(outputFile, post.Url)
-      util.Check(err)
+      util.CheckWarn(err)
     }
   }
 }
