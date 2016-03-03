@@ -30,6 +30,7 @@ type SubredditConfig struct {
   Limit int `json:"numberOfPosts"`
   SortBy string `json:"sortBy"`
   SearchFor string `json:"searchFor"`
+  CustomFolderName string `json:"customFolderName"`
 }
 
 
@@ -65,7 +66,11 @@ func main() {
     if !r.MatchString(outputPath) {
       outputPath = outputPath + "/"
     }
-    outputPath = outputPath + subreddit.Name[3:]
+    if subreddit.CustomFolderName != "" {
+      outputPath = outputPath + subreddit.CustomFolderName
+    } else {
+      outputPath = outputPath + subreddit.Name[3:]
+    }
     err := os.MkdirAll(outputPath, 0755)
     util.Check(err)
 
@@ -94,7 +99,7 @@ func configSettings(filename string) Configuration {
 
     // Setup and encode the JSON
     var b []byte
-    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", ""})
+    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "", ""})
     configuration.OutputPath = "Path/To/Output/Folder"
     b, err = json.MarshalIndent(configuration, "", "    ")
     util.Check(err)
