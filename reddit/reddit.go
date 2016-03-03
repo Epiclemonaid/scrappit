@@ -3,6 +3,8 @@ package reddit
 import (
   "reddit-scraper/http"
   "reddit-scraper/gfycat"
+  "reddit-scraper/util"
+  "net/url"
   "regexp"
   "strings"
 )
@@ -32,7 +34,15 @@ func DownloadPosts(posts []Post) []string {
     domain := post.Data.Domain
     switch {
     case strings.Contains(domain, "gfycat"):
-      urls = append(urls, gfycat.GetDownloadUrl(post.Data.Url))
+      // Parse the gfycat URL
+      gfyUrl, err := url.Parse(post.Data.Url)
+      util.Check(err)
+
+      // Generate a raw URL
+      rawUrl := gfyUrl.Scheme + "://" + gfyUrl.Host + "/" + gfyUrl.Path
+
+      // Add to URL list
+      urls = append(urls, gfycat.GetDownloadUrl(rawUrl))
     }
   }
   return urls

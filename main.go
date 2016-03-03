@@ -3,6 +3,8 @@ package main
 import (
   "fmt"
   "os"
+  "regexp"
+  "strconv"
   "encoding/json"
   "reddit-scraper/util"
   "reddit-scraper/http"
@@ -22,24 +24,42 @@ type Configuration struct {
 
 
 func main() {
-  fmt.Printf("Scraper v0.1\n")
-  fmt.Printf("Created by Curtis Li\n")
+  fmt.Println("Scraper v0.1")
+  fmt.Println("Created by Curtis Li")
 
   // Get configuration settings
   config := configSettings(configFile)
-  fmt.Printf("%v\n", config)
 
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
+    fmt.Println("-----------------------------\n")
     fmt.Println(subreddit)
 
     // Get subreddit JSON
     listing := reddit.ListingJson{}
     http.GetJson("http://www.reddit.com/" + subreddit + "/.json", &listing)
 
-    // Get downloads
+    // Get download links
     downloadUrls := reddit.DownloadPosts(listing.Data.Children)
-    fmt.Println(downloadUrls)
+    fmt.Println(len(downloadUrls), "posts to download")
+
+    // Get output directory path
+    outputPath := config.OutputPath
+    if outputPath == "" {
+      outputPath = "output/"
+    }
+    r, _ := regexp.Compile(`.*/$`)
+    if !r.MatchString(outputPath) {
+      outputPath = outputPath + "/"
+    }
+
+    // Download to folder
+    for index, downloadUrl := range downloadUrls {
+      outputFile := outputPath + strconv.Itoa(index)
+      fmt.Println("Downloading", downloadUrl, "to", outputFile)
+      err := http.DownloadFile(outputFile, downloadUrl)
+      util.Check(err)
+    }
   }
 }
 

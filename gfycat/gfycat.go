@@ -2,9 +2,9 @@ package gfycat
 
 import (
   "reddit-scraper/http"
+  "reddit-scraper/util"
   "regexp"
   "strings"
-  "fmt"
 )
 
 
@@ -32,8 +32,6 @@ func GetDownloadUrl(url string) string {
   }
   item := GfyJson{}
   err := http.GetJson(ajaxUrl, &item)
-  if err != nil {
-    fmt.Println(err)
-  }
+  util.CheckWarn(err)
   return item.GfyItem.WebmUrl
 }

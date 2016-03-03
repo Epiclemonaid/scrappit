@@ -9,3 +9,9 @@ func Check(err error) {
     log.Panic("Error:", err)
   }
 }
+
+func CheckWarn(err error) {
+  if err != nil {
+    log.Println("Error:", err)
+  }
+}
