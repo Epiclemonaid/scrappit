@@ -3,6 +3,7 @@ package main
 import (
   "fmt"
   "os"
+  "time"
   "strconv"
   "regexp"
   "encoding/json"
@@ -15,6 +16,7 @@ import (
 
 const configFile = "conf.json"
 const redditUrl = "http://www.reddit.com"
+const maxProcesses = 10
 
 type Configuration struct {
   Subreddits []SubredditConfig `json:"subreddits"`
@@ -76,13 +78,36 @@ func main() {
     util.Check(err)
 
     // Download to folder
-    for _, post := range posts {
-      outputFile := outputPath + post.Name + ".webm"
-      fmt.Println("Downloading", post.Url, "to", outputFile)
-      err := http.DownloadFile(outputFile, post.Url)
-      util.CheckWarn(err)
+    // Concurrent Go channels
+    ch := make(chan string)
+    startTime := time.Now()
+    go downloadToFolder(outputPath, posts[:len(posts)/4], ch)
+    go downloadToFolder(outputPath, posts[len(posts)/4:len(posts)/2], ch)
+    go downloadToFolder(outputPath, posts[len(posts)/2:len(posts)*3/4], ch)
+    go downloadToFolder(outputPath, posts[len(posts)*3/4:], ch)
+    for {
+      v, ok := <-ch
+      if !ok {
+        break
+      }
+      fmt.Println("Downloaded", v)
     }
+    endTime := time.Now()
+    fmt.Println("Total time taken:", endTime.Sub(startTime))
   }
+}
+
+
+func downloadToFolder(folder string, posts []reddit.DownloadPost, ch chan string) {
+  fmt.Println("Go routine to download", len(posts), "posts")
+  for _, post := range posts {
+    outputFile := folder + post.Name + ".webm"
+    //fmt.Println("Downloading", post.Url, "to", outputFile)
+    err := http.DownloadFile(outputFile, post.Url)
+    util.CheckWarn(err)
+    ch <- post.Url
+  }
+  close(ch)
 }
 
 
