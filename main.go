@@ -3,6 +3,7 @@ package main
 import (
   "fmt"
   "os"
+  "strconv"
   "regexp"
   "encoding/json"
   "reddit-scraper/util"
@@ -12,13 +13,20 @@ import (
 
 
 const configFile = "conf.json"
+const redditUrl = "http://www.reddit.com"
 
 type Configuration struct {
   Username string `json:"username"`
   Password string `json:"password"`
-  Subreddits []string `json:"subreddits"`
+  Subreddits []SubredditConfig `json:"subreddits"`
   OutputPath string `json:"outputPath"`
   Stats bool `json:"stats"`
+}
+
+type SubredditConfig struct {
+  Name string `json:"subredditName"`
+  Limit int `json:"numberOfPosts"`
+  SortBy string `json:"sortBy"`
 }
 
 
@@ -32,11 +40,23 @@ func main() {
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
     fmt.Println("-----------------------------\n")
-    fmt.Println(subreddit)
+    fmt.Println(subreddit.Name)
 
     // Get subreddit JSON
     listing := reddit.ListingJson{}
-    http.GetJson("http://www.reddit.com/" + subreddit + "/.json", &listing)
+    redditReq := redditUrl + subreddit.Name
+    if subreddit.SortBy != "" {
+      redditReq = redditReq + "/" + subreddit.SortBy
+    }
+    redditReq = redditReq + "/.json"
+    if subreddit.Limit != 0 {
+      redditReq = redditReq + "?limit=" + strconv.Itoa(subreddit.Limit)
+    } else {
+      redditReq = redditReq + "?limit=20"
+    }
+    fmt.Println("Requesting data from", redditReq)
+
+    http.GetJson(redditReq, &listing)
 
     // Get download links
     posts := reddit.DownloadPosts(listing.Data.Children)
@@ -51,7 +71,7 @@ func main() {
     if !r.MatchString(outputPath) {
       outputPath = outputPath + "/"
     }
-    outputPath = outputPath + subreddit[3:] + "/"
+    outputPath = outputPath + subreddit.Name[3:]
     err := os.MkdirAll(outputPath, 0755)
     util.Check(err)
 
@@ -81,7 +101,7 @@ func configSettings(filename string) Configuration {
     // Setup and encode the JSON
     var b []byte
     configuration.Username = "Username"
-    configuration.Subreddits = append(configuration.Subreddits, "/r/subreddit1", "/r/subreddit2", "/r/subreddit3")
+    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new"}, SubredditConfig{"/r/subreddit2", 20, "hot"})
     configuration.OutputPath = "Path/To/Output/Folder"
     b, err = json.MarshalIndent(configuration, "", "    ")
     util.Check(err)
