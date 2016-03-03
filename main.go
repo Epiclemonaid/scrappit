@@ -29,6 +29,7 @@ type SubredditConfig struct {
   Name string `json:"subredditName"`
   Limit int `json:"numberOfPosts"`
   SortBy string `json:"sortBy"`
+  Time string `json:"time"`
   SearchFor string `json:"searchFor"`
   CustomFolderName string `json:"customFolderName"`
 }
@@ -99,7 +100,7 @@ func configSettings(filename string) Configuration {
 
     // Setup and encode the JSON
     var b []byte
-    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "", ""})
+    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "all", "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "all", "", ""})
     configuration.OutputPath = "Path/To/Output/Folder"
     b, err = json.MarshalIndent(configuration, "", "    ")
     util.Check(err)
@@ -155,7 +156,11 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
     values.Set("q", subreddit.SearchFor)
     values.Set("restrict_sr", "on")
     values.Set("sort", "relevance")
-    values.Set("t", "all")
+  }
+
+  values.Set("t", "all")
+  if subreddit.Time != "" {
+    values.Set("t", subreddit.Time)
   }
 
   redditReq.RawQuery = values.Encode()
