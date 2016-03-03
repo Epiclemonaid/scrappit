@@ -4,7 +4,6 @@ import (
   "fmt"
   "os"
   "regexp"
-  "strconv"
   "encoding/json"
   "reddit-scraper/util"
   "reddit-scraper/http"
@@ -40,8 +39,8 @@ func main() {
     http.GetJson("http://www.reddit.com/" + subreddit + "/.json", &listing)
 
     // Get download links
-    downloadUrls := reddit.DownloadPosts(listing.Data.Children)
-    fmt.Println(len(downloadUrls), "posts to download")
+    posts := reddit.DownloadPosts(listing.Data.Children)
+    fmt.Println(len(posts), "posts to download")
 
     // Get output directory path
     outputPath := config.OutputPath
@@ -52,12 +51,15 @@ func main() {
     if !r.MatchString(outputPath) {
       outputPath = outputPath + "/"
     }
+    outputPath = outputPath + subreddit[3:] + "/"
+    err := os.MkdirAll(outputPath, 0755)
+    util.Check(err)
 
     // Download to folder
-    for index, downloadUrl := range downloadUrls {
-      outputFile := outputPath + strconv.Itoa(index)
-      fmt.Println("Downloading", downloadUrl, "to", outputFile)
-      err := http.DownloadFile(outputFile, downloadUrl)
+    for _, post := range posts {
+      outputFile := outputPath + post.Name + ".webm"
+      fmt.Println("Downloading", post.Url, "to", outputFile)
+      err := http.DownloadFile(outputFile, post.Url)
       util.Check(err)
     }
   }

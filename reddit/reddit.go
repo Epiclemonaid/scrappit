@@ -28,8 +28,15 @@ type ListingJson struct {
 }
 
 
-func DownloadPosts(posts []Post) []string {
-  var urls []string
+type DownloadPost struct {
+  Name string
+  Subreddit string
+  Url string
+}
+
+
+func DownloadPosts(posts []Post) []DownloadPost {
+  var newPosts []DownloadPost
   for _, post := range posts {
     domain := post.Data.Domain
     switch {
@@ -38,14 +45,17 @@ func DownloadPosts(posts []Post) []string {
       gfyUrl, err := url.Parse(post.Data.Url)
       util.Check(err)
 
-      // Generate a raw URL
+      newPost := DownloadPost{}
+      newPost.Name = gfyUrl.Path
+      newPost.Subreddit = post.Data.Subreddit
       rawUrl := gfyUrl.Scheme + "://" + gfyUrl.Host + "/" + gfyUrl.Path
+      newPost.Url = gfycat.GetDownloadUrl(rawUrl)
 
       // Add to URL list
-      urls = append(urls, gfycat.GetDownloadUrl(rawUrl))
+      newPosts = append(newPosts, newPost)
     }
   }
-  return urls
+  return newPosts
 }
 
 
