@@ -16,11 +16,12 @@ import (
 
 const configFile = "conf.json"
 const redditUrl = "http://www.reddit.com"
-const maxProcesses = 10
+const defaultMaxThreads = 10
 
 type Configuration struct {
   Subreddits []SubredditConfig `json:"subreddits"`
   OutputPath string `json:"outputPath"`
+  maxThreads int `json:"maxThreads"`
   Stats bool `json:"stats"`
   MaxFileSize int `json:"maxFileSize"`
   MinFileSize int `json:"minFileSize"`
@@ -81,17 +82,33 @@ func main() {
     // Concurrent Go channels
     ch := make(chan string)
     startTime := time.Now()
-    go downloadToFolder(outputPath, posts[:len(posts)/4], ch)
-    go downloadToFolder(outputPath, posts[len(posts)/4:len(posts)/2], ch)
-    go downloadToFolder(outputPath, posts[len(posts)/2:len(posts)*3/4], ch)
-    go downloadToFolder(outputPath, posts[len(posts)*3/4:], ch)
-    for {
+
+    if config.maxThreads <= 0 {
+      config.maxThreads = defaultMaxThreads
+    }
+
+    postsPerThread := len(posts)/config.maxThreads
+    currentStart, currentEnd := 0, 0
+    remainder := len(posts)%config.maxThreads
+    for i := 0; i < config.maxThreads; i++ {
+      currentEnd = currentStart + postsPerThread
+      if remainder > 0 {
+        currentEnd++
+        remainder--
+      }
+      fmt.Println("Starting goroutine from index", currentStart, "to index", currentEnd - 1)
+      go downloadToFolder(outputPath, posts[currentStart: currentEnd], ch)
+      currentStart = currentEnd
+    }
+
+    for i := 0; i < len(posts); i++ {
       v, ok := <-ch
       if !ok {
         break
       }
       fmt.Println("Downloaded", v)
     }
+
     endTime := time.Now()
     fmt.Println("Total time taken:", endTime.Sub(startTime))
   }
@@ -127,6 +144,7 @@ func configSettings(filename string) Configuration {
     var b []byte
     configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "all", "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "all", "", ""})
     configuration.OutputPath = "Path/To/Output/Folder"
+    configuration.maxThreads = defaultMaxThreads
     b, err = json.MarshalIndent(configuration, "", "    ")
     util.Check(err)
 
@@ -139,7 +157,7 @@ func configSettings(filename string) Configuration {
     util.Check(err)
 
     // Exit
-    fmt.Println("Please edit 'config.json'")
+    fmt.Println("Please edit 'conf.json'")
     os.Exit(0)
   }
 
