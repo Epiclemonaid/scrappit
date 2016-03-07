@@ -46,13 +46,19 @@ func main() {
   // Command-line flags
   configFile := flag.String("c", defaultConfigFile, "Path to configuration file")
   maxThreads := flag.Int("t", defaultMaxThreads, "Maximum number of concurrent downloads")
+  getHelp := flag.Bool("h", false, "Help")
   flag.Parse()
+
+  if *getHelp {
+    flag.PrintDefaults()
+    os.Exit(0)
+  }
 
   // Get configuration settings
   config := configSettings(*configFile)
 
   if config.maxThreads <= 0 {
-    config.maxThreads = maxThreads
+    config.maxThreads = *maxThreads
   }
 
   // Loop through subreddit list
