@@ -4,6 +4,7 @@ import (
   "fmt"
   "os"
   "time"
+  "flag"
   "strconv"
   "regexp"
   "encoding/json"
@@ -14,7 +15,7 @@ import (
 )
 
 
-const configFile = "conf.json"
+const defaultConfigFile = "conf.json"
 const redditUrl = "http://www.reddit.com"
 const defaultMaxThreads = 10
 
@@ -42,8 +43,17 @@ func main() {
   fmt.Println("Scraper v0.1")
   fmt.Println("Created by Curtis Li")
 
+  // Command-line flags
+  configFile := flag.String("c", defaultConfigFile, "Path to configuration file")
+  maxThreads := flag.Int("t", defaultMaxThreads, "Maximum number of concurrent downloads")
+  flag.Parse()
+
   // Get configuration settings
-  config := configSettings(configFile)
+  config := configSettings(*configFile)
+
+  if config.maxThreads <= 0 {
+    config.maxThreads = maxThreads
+  }
 
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
@@ -82,10 +92,6 @@ func main() {
     // Concurrent Go channels
     ch := make(chan string)
     startTime := time.Now()
-
-    if config.maxThreads <= 0 {
-      config.maxThreads = defaultMaxThreads
-    }
 
     postsPerThread := len(posts)/config.maxThreads
     currentStart, currentEnd := 0, 0
@@ -136,7 +142,8 @@ func configSettings(filename string) Configuration {
   // File does not exist, create it
   if os.IsNotExist(err) {
     // Create file
-    fmt.Println("Initiating new configuration file...")
+    fmt.Println("No configuration file found at", filename)
+    fmt.Println("Initiating new configuration file at", filename, "...")
     file, err = os.Create(filename)
     util.Check(err)
 
