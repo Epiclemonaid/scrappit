@@ -19,11 +19,12 @@
 * Scrapes given subreddits for links
 * Supports reddit features such as: searching, post limiting, time limiting, subcategorizing (hot, new, top)
 * Automatically downloads the content into an output directory
+* Current supported post types: gfycat links, static files (.png, .jpg, etc)
+* Concurrent downloading
 
 ## TODO
 
 * Scheduled running
-* Concurrent downloading
+* Keep store of last item downloaded (i.e. Get all posts up to some other post)
 * Imgur posts
 * Self.Reddit posts
-* Other external links
