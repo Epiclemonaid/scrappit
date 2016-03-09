@@ -62,7 +62,7 @@ func DownloadPosts(posts []Post) []DownloadPost {
       newPost.Name = newPost.Name + fileType
     case strings.Contains(post.Data.Domain, "gfycat"):
       // Gfycat
-      newPost.Name = post.Data.Title + ".webm"
+      newPost.Name = newPost.Name + ".webm"
       rawUrl := newUrl.Scheme + "://" + newUrl.Host + "/" + newUrl.Path
       newPost.Url = gfycat.GetDownloadUrl(rawUrl)
 
