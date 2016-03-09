@@ -22,10 +22,8 @@ const defaultMaxThreads = 10
 type Configuration struct {
   Subreddits []SubredditConfig `json:"subreddits"`
   OutputPath string `json:"outputPath"`
-  maxThreads int `json:"maxThreads"`
+  MaxThreads int `json:"maxThreads"`
   Stats bool `json:"stats"`
-  MaxFileSize int `json:"maxFileSize"`
-  MinFileSize int `json:"minFileSize"`
   FileTypes []string `json:"fileTypes"`
 }
 
@@ -45,7 +43,7 @@ func main() {
 
   // Command-line flags
   configFile := flag.String("c", defaultConfigFile, "Path to configuration file")
-  maxThreads := flag.Int("t", defaultMaxThreads, "Maximum number of concurrent downloads")
+  maxThreads := flag.Int("t", 0, "Maximum number of concurrent downloads")
   getHelp := flag.Bool("h", false, "Help")
   flag.Parse()
 
@@ -57,10 +55,14 @@ func main() {
   // Get configuration settings
   config := configSettings(*configFile)
 
-  if config.maxThreads <= 0 {
-    config.maxThreads = *maxThreads
+  if *maxThreads > 0 {
+    config.MaxThreads = *maxThreads
+  } else if config.MaxThreads <= 0 {
+    config.MaxThreads = defaultMaxThreads
   }
 
+  fmt.Println(config.MaxThreads)
+  
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
     fmt.Println("-----------------------------\n")
@@ -99,10 +101,10 @@ func main() {
     ch := make(chan string)
     startTime := time.Now()
 
-    postsPerThread := len(posts)/config.maxThreads
+    postsPerThread := len(posts)/config.MaxThreads
     currentStart, currentEnd := 0, 0
-    remainder := len(posts)%config.maxThreads
-    for i := 0; i < config.maxThreads; i++ {
+    remainder := len(posts)%config.MaxThreads
+    for i := 0; i < config.MaxThreads; i++ {
       currentEnd = currentStart + postsPerThread
       if remainder > 0 {
         currentEnd++
@@ -149,7 +151,7 @@ func configSettings(filename string) Configuration {
   if os.IsNotExist(err) {
     // Create file
     fmt.Println("No configuration file found at", filename)
-    fmt.Println("Initiating new configuration file at", filename, "...")
+    fmt.Println("Initiating new configuration file...")
     file, err = os.Create(filename)
     util.Check(err)
 
@@ -157,7 +159,7 @@ func configSettings(filename string) Configuration {
     var b []byte
     configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "all", "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "all", "", ""})
     configuration.OutputPath = "Path/To/Output/Folder"
-    configuration.maxThreads = defaultMaxThreads
+    configuration.MaxThreads = defaultMaxThreads
     b, err = json.MarshalIndent(configuration, "", "    ")
     util.Check(err)
 
@@ -170,7 +172,7 @@ func configSettings(filename string) Configuration {
     util.Check(err)
 
     // Exit
-    fmt.Println("Please edit 'conf.json'")
+    fmt.Println("Please edit", filename)
     os.Exit(0)
   }
 

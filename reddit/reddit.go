@@ -50,17 +50,19 @@ func DownloadPosts(posts []Post) []DownloadPost {
     newPost.Url = post.Data.Url
 
     // Regex
-    staticRegex, _ := regexp.Compile(`.+\.(jpeg|jpg|gif|png)$`)
+    staticRegex, _ := regexp.Compile(`\.(jpeg|jpg|gif|webm|png)$`)
 
     // Find the URL type
     switch {
     case staticRegex.MatchString(newUrl.Path):
       // Static file
       newPost.Url = post.Data.Url
+      fileType :=  staticRegex.FindString(newUrl.Path)
 
+      newPost.Name = newPost.Name + fileType
     case strings.Contains(post.Data.Domain, "gfycat"):
       // Gfycat
-      newPost.Name = newUrl.Path
+      newPost.Name = post.Data.Title + ".webm"
       rawUrl := newUrl.Scheme + "://" + newUrl.Host + "/" + newUrl.Path
       newPost.Url = gfycat.GetDownloadUrl(rawUrl)
 
