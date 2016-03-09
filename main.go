@@ -61,8 +61,6 @@ func main() {
     config.MaxThreads = defaultMaxThreads
   }
 
-  fmt.Println(config.MaxThreads)
-  
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
     fmt.Println("-----------------------------\n")
@@ -120,7 +118,7 @@ func main() {
       if !ok {
         break
       }
-      fmt.Println("Downloaded", v)
+      fmt.Println(v)
     }
 
     endTime := time.Now()
@@ -136,7 +134,7 @@ func downloadToFolder(folder string, posts []reddit.DownloadPost, ch chan string
     //fmt.Println("Downloading", post.Url, "to", outputFile)
     err := http.DownloadFile(outputFile, post.Url)
     util.CheckWarn(err)
-    ch <- post.Url
+    ch <- "Downloaded " + post.Url
   }
   close(ch)
 }

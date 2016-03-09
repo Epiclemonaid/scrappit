@@ -46,7 +46,7 @@ func DownloadPosts(posts []Post) []DownloadPost {
     // Generate the new post data
     newPost := DownloadPost{}
     newPost.Subreddit = post.Data.Subreddit
-    newPost.Name = post.Data.Title
+    newPost.Name = util.ReplaceSlashes(post.Data.Title)
     newPost.Url = post.Data.Url
 
     // Regex
