@@ -1,17 +1,18 @@
 package main
 
 import (
-  "fmt"
-  "os"
-  "time"
-  "flag"
-  "strconv"
-  "regexp"
   "encoding/json"
+  "fmt"
+  "flag"
   "net/url"
+  "os"
   "reddit-scraper/util"
   "reddit-scraper/http"
   "reddit-scraper/reddit"
+  "regexp"
+  "strconv"
+  "sync"
+  "time"
 )
 
 
@@ -90,7 +91,7 @@ func main() {
     util.Check(err)
 
     // Download to folder
-    ch := make(chan string)
+    var wg sync.WaitGroup
     startTime := time.Now()
 
     postsPerThread := len(posts)/config.MaxThreads
@@ -102,19 +103,13 @@ func main() {
         currentEnd++
         remainder--
       }
-      fmt.Println("Starting goroutine from index", currentStart, "to index", currentEnd - 1)
-      go downloadToFolder(outputPath, posts[currentStart: currentEnd], subreddit, ch)
+      wg.Add(1)
+      go downloadToFolder(outputPath, posts[currentStart: currentEnd], subreddit, &wg)
       currentStart = currentEnd
     }
 
     // Block and wait for go routines to complete
-    for i := 0; i < len(posts); i++ {
-      v, ok := <-ch
-      if !ok {
-        break
-      }
-      fmt.Println(v)
-    }
+    wg.Wait()
 
     endTime := time.Now()
     fmt.Println("Total time taken:", endTime.Sub(startTime))
@@ -226,8 +221,9 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
  *  Go routine thread function
  *  Outputs success messages to main function
  */
-func downloadToFolder(folder string, posts []reddit.Post, config SubredditConfig, ch chan string) {
+func downloadToFolder(folder string, posts []reddit.Post, config SubredditConfig, wg *sync.WaitGroup) {
   fmt.Println("Go routine to download", len(posts), "posts")
+  defer wg.Done()
 
   for _, post := range posts {
 
@@ -245,10 +241,8 @@ func downloadToFolder(folder string, posts []reddit.Post, config SubredditConfig
     err := http.DownloadFile(outputFile, downloadPost.Url)
     util.CheckWarn(err)
 
-    fmt.Println(downloadPost.Title + ":", downloadPost.Id, downloadPost.Score)
-    ch <- "Downloaded " + downloadPost.Url
+    fmt.Println("Downloaded:", downloadPost.Title, "\n\tID:", downloadPost.Id, "\tScore:", downloadPost.Score)
   }
-  close(ch)
 }
 
 
