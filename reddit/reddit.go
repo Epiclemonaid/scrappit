@@ -20,9 +20,12 @@ import (
 type Post struct {
   Data struct {
     Domain string `json:"domain"`
+    Name string `json:"name"`
+    Permalink string `json:"permalink"`
+    Score int `json:"score"`
+    Stickied bool `json:"stickied"`
     Subreddit string `json:"subreddit"`
     Title string `json:"title"`
-    Permalink string `json:"permalink"`
     Url string `json:"url"`
   } `json:"data"`
 }
@@ -34,8 +37,11 @@ type ListingJson struct {
 }
 
 type DownloadPost struct {
-  Name string
+  FileType string
   Id string
+  Title string
+  Score int
+  Stickied bool
   Subreddit string
   Url string
 }
@@ -51,48 +57,45 @@ type DownloadPost struct {
  *  Parses the Post data
  *  Retrieves the correct download URL depending on host
  */
-func DownloadPosts(posts []Post) []DownloadPost {
-  var newPosts []DownloadPost
-  for _, post := range posts {
-    // Parse the URL
-    newUrl, err := url.Parse(post.Data.Url)
-    util.Check(err)
+func GetDownloadPost(post Post) DownloadPost {
+  // Parse the URL
+  newUrl, err := url.Parse(post.Data.Url)
+  util.Check(err)
 
-    // Generate the new post data
-    newPost := DownloadPost{}
-    newPost.Subreddit = post.Data.Subreddit
-    newPost.Name = util.ReplaceSlashes(post.Data.Title)
+  // Generate the new post data
+  newPost := DownloadPost{}
+  newPost.Id = post.Data.Name
+  newPost.Score = post.Data.Score
+  newPost.Stickied = post.Data.Stickied
+  newPost.Subreddit = post.Data.Subreddit
+  newPost.Title = util.ReplaceSlashes(post.Data.Title)
+  newPost.Url = post.Data.Url
+
+  // Regex
+  staticRegex, _ := regexp.Compile(`\.(jpeg|jpg|gif|webm|png)$`)
+
+  // Find the URL type
+  switch {
+  case staticRegex.MatchString(newUrl.Path):
+    // Static file
     newPost.Url = post.Data.Url
+    newPost.FileType =  staticRegex.FindString(newUrl.Path)
 
-    // Regex
-    staticRegex, _ := regexp.Compile(`\.(jpeg|jpg|gif|webm|png)$`)
+  case strings.Contains(post.Data.Domain, "gfycat"):
+    // Gfycat
+    newPost.FileType = ".webm"
+    rawUrl := newUrl.Scheme + "://" + newUrl.Host + "/" + newUrl.Path
+    newPost.Url = gfycat.GetDownloadUrl(rawUrl)
 
-    // Find the URL type
-    switch {
-    case staticRegex.MatchString(newUrl.Path):
-      // Static file
-      newPost.Url = post.Data.Url
-      fileType :=  staticRegex.FindString(newUrl.Path)
+  case strings.Contains(post.Data.Domain, "imgur"):
+    // Non-static Imgur
+    fmt.Println("Imgur:", post.Data.Url)
 
-      newPost.Name = newPost.Name + fileType
-    case strings.Contains(post.Data.Domain, "gfycat"):
-      // Gfycat
-      newPost.Name = newPost.Name + ".webm"
-      rawUrl := newUrl.Scheme + "://" + newUrl.Host + "/" + newUrl.Path
-      newPost.Url = gfycat.GetDownloadUrl(rawUrl)
-
-    case strings.Contains(post.Data.Domain, "imgur"):
-      // Non-static Imgur
-      fmt.Println("Imgur:", post.Data.Url)
-
-    default:
-      fmt.Println("Unsupported URL:", post.Data.Url)
-    }
-
-    // Add to URL list
-    newPosts = append(newPosts, newPost)
+  default:
+    fmt.Println("Unsupported URL:", post.Data.Url)
   }
-  return newPosts
+
+  return newPost
 }
 
 

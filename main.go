@@ -25,6 +25,8 @@ const defaultConfigFile = "conf.json"
 const defaultMaxThreads = 10
 const redditUrl = "http://www.reddit.com"
 
+var config Configuration
+
 type Configuration struct {
   Subreddits []SubredditConfig `json:"subreddits"`
   OutputPath string `json:"outputPath"`
@@ -38,6 +40,7 @@ type SubredditConfig struct {
   Limit int `json:"numberOfPosts"`
   SortBy string `json:"sortBy"`
   Time string `json:"time"`
+  MinScore int `json:"minScore"`
   SearchFor string `json:"searchFor"`
   CustomFolderName string `json:"customFolderName"`
 }
@@ -51,7 +54,7 @@ type SubredditConfig struct {
 
 func main() {
   // Set up the program (config file and command-line flags)
-  config := setup()
+  config = setup()
 
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
@@ -66,7 +69,7 @@ func main() {
     http.GetJson(redditReq, &listing)
 
     // Get download links
-    posts := reddit.DownloadPosts(listing.Data.Children)
+    posts := []reddit.Post(listing.Data.Children)
     fmt.Println(len(posts), "posts to download")
 
     // Get output directory path
@@ -100,7 +103,7 @@ func main() {
         remainder--
       }
       fmt.Println("Starting goroutine from index", currentStart, "to index", currentEnd - 1)
-      go downloadToFolder(outputPath, posts[currentStart: currentEnd], ch)
+      go downloadToFolder(outputPath, posts[currentStart: currentEnd], subreddit, ch)
       currentStart = currentEnd
     }
 
@@ -144,7 +147,7 @@ func configSettings(filename string) Configuration {
 
     // Setup and encode the JSON
     var b []byte
-    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "all", "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "all", "", ""})
+    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "all", 0, "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "all", 0, "", ""})
     configuration.OutputPath = "Path/To/Output/Folder"
     configuration.MaxThreads = defaultMaxThreads
     b, err = json.MarshalIndent(configuration, "", "    ")
@@ -223,14 +226,27 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
  *  Go routine thread function
  *  Outputs success messages to main function
  */
-func downloadToFolder(folder string, posts []reddit.DownloadPost, ch chan string) {
+func downloadToFolder(folder string, posts []reddit.Post, config SubredditConfig, ch chan string) {
   fmt.Println("Go routine to download", len(posts), "posts")
+
   for _, post := range posts {
-    outputFile := folder + post.Name
-    //fmt.Println("Downloading", post.Url, "to", outputFile)
-    err := http.DownloadFile(outputFile, post.Url)
+
+    // Get the post data
+    downloadPost := reddit.GetDownloadPost(post)
+
+    if downloadPost.Score < config.MinScore && config.MinScore > 0 {
+      continue
+    }
+
+    // Determine output location
+    outputFile := folder + downloadPost.Title + downloadPost.FileType
+
+    // Download the file
+    err := http.DownloadFile(outputFile, downloadPost.Url)
     util.CheckWarn(err)
-    ch <- "Downloaded " + post.Url
+
+    fmt.Println(downloadPost.Title + ":", downloadPost.Id, downloadPost.Score)
+    ch <- "Downloaded " + downloadPost.Url
   }
   close(ch)
 }
@@ -257,7 +273,7 @@ func setup() Configuration {
   }
 
   // Get configuration settings
-  config := configSettings(*configFile)
+  config = configSettings(*configFile)
 
   if *maxThreads > 0 {
     config.MaxThreads = *maxThreads
