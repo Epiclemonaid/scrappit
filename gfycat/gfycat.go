@@ -8,6 +8,12 @@ import (
 )
 
 
+/******************************************
+ *                                        *
+ * Struct definitions                     *
+ *                                        *
+ ******************************************/
+
 type GfyJson struct {
   GfyItem struct {
     GfyName string `json:"gfyName"`
@@ -18,6 +24,15 @@ type GfyJson struct {
 }
 
 
+/******************************************
+ *                                        *
+ * Exported functions                     *
+ *                                        *
+ ******************************************/
+
+/*
+ *  Get the JSON request URL from the public URL
+ */
 func GetAjaxUrl(url string) string {
   r, _ := regexp.Compile(`\/\w+$`)
   id := r.FindString(url)
@@ -25,6 +40,9 @@ func GetAjaxUrl(url string) string {
 }
 
 
+/*
+ *  Get the download webm URL from the public URL
+ */
 func GetDownloadUrl(url string) string {
   ajaxUrl := url
   if !strings.Contains(url, "cajax") {

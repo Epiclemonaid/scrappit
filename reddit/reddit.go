@@ -11,6 +11,12 @@ import (
 )
 
 
+/******************************************
+ *                                        *
+ * Struct definitions                     *
+ *                                        *
+ ******************************************/
+
 type Post struct {
   Data struct {
     Domain string `json:"domain"`
@@ -21,21 +27,30 @@ type Post struct {
   } `json:"data"`
 }
 
-
 type ListingJson struct {
   Data struct {
     Children []Post `json:"children"`
   } `json:"data"`
 }
 
-
 type DownloadPost struct {
   Name string
+  Id string
   Subreddit string
   Url string
 }
 
 
+/******************************************
+ *                                        *
+ * Exported functions                     *
+ *                                        *
+ ******************************************/
+
+/*
+ *  Parses the Post data
+ *  Retrieves the correct download URL depending on host
+ */
 func DownloadPosts(posts []Post) []DownloadPost {
   var newPosts []DownloadPost
   for _, post := range posts {
@@ -81,6 +96,10 @@ func DownloadPosts(posts []Post) []DownloadPost {
 }
 
 
+/*
+ *  UNUSED
+ *  Filters a list of URLs for URLs with domains "reddit.com"
+ */
 func GetRedditUrls(urls []http.URL) []http.URL {
   return http.Filter(urls, func(u http.URL) bool {
     match, err := regexp.MatchString(`^(\w+\.)?reddit\.com$`, u.Host)
@@ -88,12 +107,5 @@ func GetRedditUrls(urls []http.URL) []http.URL {
       return false
     }
     return match
-  })
-}
-
-
-func GetSubreddits(urls []http.URL) []http.URL {
-  return http.Filter(urls, func(u http.URL) bool {
-    return strings.Contains(u.Host, "reddit")
   })
 }

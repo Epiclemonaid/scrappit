@@ -15,6 +15,15 @@ import (
 type URL url.URL
 
 
+/******************************************
+ *                                        *
+ * Exported functions                     *
+ *                                        *
+ ******************************************/
+
+/*
+ *  Filters a list of URLs for URLs with a matching domain
+ */
 func GetSiteUrls(urls []URL, site string) []URL {
   return Filter(urls, func(u URL) bool {
     match, err := regexp.MatchString(site, u.Host)
@@ -26,6 +35,10 @@ func GetSiteUrls(urls []URL, site string) []URL {
 }
 
 
+/*
+ *  UNUSED
+ *  Crawls a page to find all the links
+ */
 func Crawl(u string) ([]URL, error) {
   var urls []URL
 
@@ -71,6 +84,10 @@ func Crawl(u string) ([]URL, error) {
 }
 
 
+/*
+ *  UNUSED
+ *  Get the 'href' attribute of an link <a> tag
+ */
 func getHref(token html.Token) (found bool, href string) {
   for _, attr := range token.Attr {
     if attr.Key == "href" {
@@ -83,6 +100,11 @@ func getHref(token html.Token) (found bool, href string) {
 }
 
 
+/*
+ *  Filters an array of URLs using a given function
+ *  Calls the function for each element in the array
+ *  The element is kept if the function returns true
+ */
 func Filter(origUrls []URL, f func(URL) bool) []URL {
   newUrls := make([]URL, 0)
   for _, ele := range origUrls {
@@ -94,6 +116,10 @@ func Filter(origUrls []URL, f func(URL) bool) []URL {
 }
 
 
+/*
+ *  UNUSED
+ *  Get the body of a page given its URL
+ */
 func GetBody(u string) ([]byte, error) {
   r, err := http.Get(u)
   if err != nil {
@@ -110,6 +136,10 @@ func GetBody(u string) ([]byte, error) {
 }
 
 
+/*
+ *  Parse a JSON object from a URL
+ *  Places the values into a provided struct
+ */
 func GetJson(u string, target interface{}) error {
   // Get the data
   r, err := http.Get(u)
@@ -123,6 +153,10 @@ func GetJson(u string, target interface{}) error {
 }
 
 
+/*
+ *  Downloads a file from a given URL
+ *  The new file location is at 'filepath'
+ */
 func DownloadFile(filepath string, u string) error {
   // Create the file
   out, err := os.Create(filepath)

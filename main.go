@@ -15,9 +15,15 @@ import (
 )
 
 
+/******************************************
+ *                                        *
+ * Global variables and structs           *
+ *                                        *
+ ******************************************/
+
 const defaultConfigFile = "conf.json"
-const redditUrl = "http://www.reddit.com"
 const defaultMaxThreads = 10
+const redditUrl = "http://www.reddit.com"
 
 type Configuration struct {
   Subreddits []SubredditConfig `json:"subreddits"`
@@ -37,29 +43,15 @@ type SubredditConfig struct {
 }
 
 
+/******************************************
+ *                                        *
+ * Main function                          *
+ *                                        *
+ ******************************************/
+
 func main() {
-  fmt.Println("Scraper v0.1")
-  fmt.Println("Created by Curtis Li")
-
-  // Command-line flags
-  configFile := flag.String("c", defaultConfigFile, "Path to configuration file")
-  maxThreads := flag.Int("t", 0, "Maximum number of concurrent downloads")
-  getHelp := flag.Bool("h", false, "Help")
-  flag.Parse()
-
-  if *getHelp {
-    flag.PrintDefaults()
-    os.Exit(0)
-  }
-
-  // Get configuration settings
-  config := configSettings(*configFile)
-
-  if *maxThreads > 0 {
-    config.MaxThreads = *maxThreads
-  } else if config.MaxThreads <= 0 {
-    config.MaxThreads = defaultMaxThreads
-  }
+  // Set up the program (config file and command-line flags)
+  config := setup()
 
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
@@ -95,7 +87,6 @@ func main() {
     util.Check(err)
 
     // Download to folder
-    // Concurrent Go channels
     ch := make(chan string)
     startTime := time.Now()
 
@@ -113,6 +104,7 @@ func main() {
       currentStart = currentEnd
     }
 
+    // Block and wait for go routines to complete
     for i := 0; i < len(posts); i++ {
       v, ok := <-ch
       if !ok {
@@ -127,19 +119,16 @@ func main() {
 }
 
 
-func downloadToFolder(folder string, posts []reddit.DownloadPost, ch chan string) {
-  fmt.Println("Go routine to download", len(posts), "posts")
-  for _, post := range posts {
-    outputFile := folder + post.Name
-    //fmt.Println("Downloading", post.Url, "to", outputFile)
-    err := http.DownloadFile(outputFile, post.Url)
-    util.CheckWarn(err)
-    ch <- "Downloaded " + post.Url
-  }
-  close(ch)
-}
+/******************************************
+ *                                        *
+ * Helper functions                       *
+ *                                        *
+ ******************************************/
 
-
+/*
+ *  Loads a configuration file to the program
+ *  If no configuration file exists, creates a new one
+ */
 func configSettings(filename string) Configuration {
   // Open config file
   configuration := Configuration{}
@@ -183,6 +172,10 @@ func configSettings(filename string) Configuration {
   return configuration
 }
 
+
+/*
+ *  Creates the JSON request URL for Reddit given a configuration
+ */
 func createRedditJsonReq(subreddit SubredditConfig) string {
   // Base URL
   redditReq, err := url.Parse(redditUrl + subreddit.Name)
@@ -223,3 +216,55 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
 
   return redditReq.String()
 }
+
+
+/*
+ *  Downloads a file from a URL to the given folder
+ *  Go routine thread function
+ *  Outputs success messages to main function
+ */
+func downloadToFolder(folder string, posts []reddit.DownloadPost, ch chan string) {
+  fmt.Println("Go routine to download", len(posts), "posts")
+  for _, post := range posts {
+    outputFile := folder + post.Name
+    //fmt.Println("Downloading", post.Url, "to", outputFile)
+    err := http.DownloadFile(outputFile, post.Url)
+    util.CheckWarn(err)
+    ch <- "Downloaded " + post.Url
+  }
+  close(ch)
+}
+
+
+/*
+ *  Set up function to be run when program is loading
+ *  Handles command-line flags and configurations file
+ *  Prints help statements
+ */
+func setup() Configuration {
+  fmt.Println("Scraper v0.1")
+  fmt.Println("Created by Curtis Li")
+
+  // Command-line flags
+  configFile := flag.String("c", defaultConfigFile, "Path to configuration file")
+  maxThreads := flag.Int("t", 0, "Maximum number of concurrent downloads")
+  getHelp := flag.Bool("h", false, "Help")
+  flag.Parse()
+
+  if *getHelp {
+    flag.PrintDefaults()
+    os.Exit(0)
+  }
+
+  // Get configuration settings
+  config := configSettings(*configFile)
+
+  if *maxThreads > 0 {
+    config.MaxThreads = *maxThreads
+  } else if config.MaxThreads <= 0 {
+    config.MaxThreads = defaultMaxThreads
+  }
+
+  return config
+}
+
