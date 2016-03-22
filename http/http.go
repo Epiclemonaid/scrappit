@@ -140,16 +140,31 @@ func GetBody(u string) ([]byte, error) {
  *  Parse a JSON object from a URL
  *  Places the values into a provided struct
  */
-func GetJson(u string, target interface{}) error {
-  // Get the data
-  r, err := http.Get(u)
+func GetJson(u string, target interface{}, headers map[string]string) error {
+  // Create an HTTP request
+  client := &http.Client{}
+  req, err := http.NewRequest("GET", u, nil)
   if err != nil {
     return err
   }
-  defer r.Body.Close()
+
+  // Add headers
+  if headers != nil {
+    for key, val := range headers {
+      req.Header.Set(key, val)
+    }
+  }
+
+  // Send the HTTP request
+  res, err := client.Do(req)
+  if err != nil {
+    return err
+  }
+
+  defer res.Body.Close()
 
   // Decode the JSON
-  return json.NewDecoder(r.Body).Decode(target)
+  return json.NewDecoder(res.Body).Decode(target)
 }
 
 
@@ -157,7 +172,7 @@ func GetJson(u string, target interface{}) error {
  *  Downloads a file from a given URL
  *  The new file location is at 'filepath'
  */
-func DownloadFile(filepath string, u string) error {
+func DownloadFile(filepath string, u string, headers map[string]string) error {
   // Create the file
   out, err := os.Create(filepath)
   if err != nil {
@@ -165,15 +180,29 @@ func DownloadFile(filepath string, u string) error {
   }
   defer out.Close()
 
-  // Get the data
-  r, err := http.Get(u)
+  // Create an HTTP request
+  client := &http.Client{}
+  req, err := http.NewRequest("GET", u, nil)
   if err != nil {
     return err
   }
-  defer r.Body.Close()
+
+  // Add headers
+  if headers != nil {
+    for key, val := range headers {
+      req.Header.Set(key, val)
+    }
+  }
+
+  // Send the HTTP request
+  res, err := client.Do(req)
+  if err != nil {
+    return err
+  }
+  defer res.Body.Close()
 
   // Write the body to a file
-  _, err = io.Copy(out, r.Body)
+  _, err = io.Copy(out, res.Body)
   if err != nil {
     return err
   }

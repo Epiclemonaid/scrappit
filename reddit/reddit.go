@@ -4,7 +4,9 @@ import (
   "fmt"
   "reddit-scraper/http"
   "reddit-scraper/gfycat"
+  "reddit-scraper/imgur"
   "reddit-scraper/util"
+  "path/filepath"
   "net/url"
   "regexp"
   "strings"
@@ -76,6 +78,12 @@ func GetDownloadPost(post Post) DownloadPost {
 
   // Find the URL type
   switch {
+  case strings.Contains(post.Data.Domain, "imgur"):
+    // Imgur
+    newPost.Url = imgur.GetDownloadUrl(post.Data.Url)
+    newPost.FileType = filepath.Ext(newPost.Url)
+    fmt.Println("IMGUR:", newPost.Url)
+
   case staticRegex.MatchString(newUrl.Path):
     // Static file
     newPost.Url = post.Data.Url
@@ -86,10 +94,6 @@ func GetDownloadPost(post Post) DownloadPost {
     newPost.FileType = ".webm"
     rawUrl := newUrl.Scheme + "://" + newUrl.Host + "/" + newUrl.Path
     newPost.Url = gfycat.GetDownloadUrl(rawUrl)
-
-  case strings.Contains(post.Data.Domain, "imgur"):
-    // Non-static Imgur
-    fmt.Println("Imgur:", post.Data.Url)
 
   default:
     fmt.Println("Unsupported URL:", post.Data.Url)

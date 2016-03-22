@@ -54,6 +54,7 @@ type SubredditConfig struct {
  ******************************************/
 
 func main() {
+
   // Set up the program (config file and command-line flags)
   config = setup()
 
@@ -67,7 +68,7 @@ func main() {
     redditReq := createRedditJsonReq(subreddit)
     fmt.Println("Requesting data from", redditReq)
 
-    http.GetJson(redditReq, &listing)
+    http.GetJson(redditReq, &listing, nil)
 
     // Get download links
     posts := []reddit.Post(listing.Data.Children)
@@ -238,7 +239,7 @@ func downloadToFolder(folder string, posts []reddit.Post, config SubredditConfig
     outputFile := folder + downloadPost.Title + downloadPost.FileType
 
     // Download the file
-    err := http.DownloadFile(outputFile, downloadPost.Url)
+    err := http.DownloadFile(outputFile, downloadPost.Url, nil)
     util.CheckWarn(err)
 
     fmt.Println("Downloaded:", downloadPost.Title, "\n\tID:", downloadPost.Id, "\tScore:", downloadPost.Score)

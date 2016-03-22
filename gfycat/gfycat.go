@@ -49,7 +49,7 @@ func GetDownloadUrl(url string) string {
     ajaxUrl = GetAjaxUrl(url)
   }
   item := GfyJson{}
-  err := http.GetJson(ajaxUrl, &item)
+  err := http.GetJson(ajaxUrl, &item, nil)
   util.CheckWarn(err)
   return item.GfyItem.WebmUrl
 }
