@@ -76,13 +76,14 @@ func GetDownloadPost(post Post) DownloadPost {
   // Regex
   staticRegex, _ := regexp.Compile(`\.(jpeg|jpg|gif|webm|png)$`)
 
+  fmt.Println(post.Data.Url)
+
   // Find the URL type
   switch {
   case strings.Contains(post.Data.Domain, "imgur"):
     // Imgur
     newPost.Url = imgur.GetDownloadUrl(post.Data.Url)
     newPost.FileType = filepath.Ext(newPost.Url)
-    fmt.Println("IMGUR:", newPost.Url)
 
   case staticRegex.MatchString(newUrl.Path):
     // Static file

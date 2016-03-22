@@ -52,7 +52,7 @@ var baseUrl = "https://api.imgur.com/3/";
  *  Get the JSON request URL from the public URL
  */
 func GetAjaxUrl(url string) string {
-  r, _ := regexp.Compile(`\/[a-zA-Z1-9.]+$`)
+  r, _ := regexp.Compile(`\/[a-zA-Z0-9.?#]+$`)
   id := r.FindString(url)
   id = strings.TrimSuffix(id, filepath.Ext(id))
   return baseUrl + "image" + id
