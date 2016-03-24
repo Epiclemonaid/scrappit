@@ -9,10 +9,10 @@ import (
   "reddit-scraper/util"
   "reddit-scraper/http"
   "reddit-scraper/reddit"
-  "regexp"
+//  "regexp"
   "strconv"
   "sync"
-  "time"
+//  "time"
 )
 
 
@@ -63,16 +63,32 @@ func main() {
     fmt.Println("-----------------------------\n")
     fmt.Println(subreddit.Name)
 
-    // Get subreddit JSON
-    listing := reddit.ListingJson{}
-    redditReq := createRedditJsonReq(subreddit)
-    fmt.Println("Requesting data from", redditReq)
+    posts := []reddit.Post{}
 
-    http.GetJson(redditReq, &listing, nil)
+    if subreddit.Limit == 0 {
+      subreddit.Limit = 20
+    }
 
-    // Get download links
-    posts := []reddit.Post(listing.Data.Children)
-    fmt.Println(len(posts), "posts to download")
+    for subreddit.Limit > 0 {
+      // Get subreddit JSON
+      listing := reddit.ListingJson{}
+      redditReq := createRedditJsonReq(subreddit)
+      fmt.Println("Requesting data from", redditReq)
+
+      if subreddit.Limit > 100 {
+        subreddit.Limit -= 100
+      } else {
+        subreddit.Limit = 0
+      }
+
+      http.GetJson(redditReq, &listing, nil)
+
+      // Get download links
+      newPosts := []reddit.Post(listing.Data.Children)
+      fmt.Println(len(newPosts), "posts to download")
+      posts = append(posts, newPosts...)
+      fmt.Println(len(posts), "total posts")
+    }
 
     // Get output directory path
     outputPath := config.OutputPath
