@@ -9,10 +9,10 @@ import (
   "reddit-scraper/util"
   "reddit-scraper/http"
   "reddit-scraper/reddit"
-//  "regexp"
+  "regexp"
   "strconv"
   "sync"
-//  "time"
+  "time"
 )
 
 
@@ -57,6 +57,7 @@ func main() {
 
   // Set up the program (config file and command-line flags)
   config = setup()
+  debug := false
 
   // Loop through subreddit list
   for _, subreddit := range config.Subreddits {
@@ -75,61 +76,69 @@ func main() {
       redditReq := createRedditJsonReq(subreddit)
       fmt.Println("Requesting data from", redditReq)
 
+      // Modify limit, as reddit only returns 100 max per request
       if subreddit.Limit > 100 {
         subreddit.Limit -= 100
       } else {
         subreddit.Limit = 0
       }
 
-      http.GetJson(redditReq, &listing, nil)
+      // Send request
+      headers := make(map[string]string)
+      headers["User-Agent"] = "Scrappit by /u/username"
+      http.GetJson(redditReq, &listing, headers)
 
       // Get download links
       newPosts := []reddit.Post(listing.Data.Children)
-      fmt.Println(len(newPosts), "posts to download")
       posts = append(posts, newPosts...)
-      fmt.Println(len(posts), "total posts")
-    }
-
-    // Get output directory path
-    outputPath := config.OutputPath
-    if outputPath == "" {
-      outputPath = "output/"
-    }
-    r, _ := regexp.Compile(`.*/$`)
-    if !r.MatchString(outputPath) {
-      outputPath = outputPath + "/"
-    }
-    if subreddit.CustomFolderName != "" {
-      outputPath = outputPath + subreddit.CustomFolderName + "/"
-    } else {
-      outputPath = outputPath + subreddit.Name[3:] + "/"
-    }
-    err := os.MkdirAll(outputPath, 0755)
-    util.Check(err)
-
-    // Download to folder
-    var wg sync.WaitGroup
-    startTime := time.Now()
-
-    postsPerThread := len(posts)/config.MaxThreads
-    currentStart, currentEnd := 0, 0
-    remainder := len(posts)%config.MaxThreads
-    for i := 0; i < config.MaxThreads; i++ {
-      currentEnd = currentStart + postsPerThread
-      if remainder > 0 {
-        currentEnd++
-        remainder--
+      if len(newPosts) < 100 {
+        subreddit.Limit = 0
       }
-      wg.Add(1)
-      go downloadToFolder(outputPath, posts[currentStart: currentEnd], subreddit, &wg)
-      currentStart = currentEnd
     }
+    fmt.Println(len(posts), "posts to download")
 
-    // Block and wait for go routines to complete
-    wg.Wait()
+    if !debug {
+      // Get output directory path
+      outputPath := config.OutputPath
+      if outputPath == "" {
+        outputPath = "output/"
+      }
+      r, _ := regexp.Compile(`.*/$`)
+      if !r.MatchString(outputPath) {
+        outputPath = outputPath + "/"
+      }
+      if subreddit.CustomFolderName != "" {
+        outputPath = outputPath + subreddit.CustomFolderName + "/"
+      } else {
+        outputPath = outputPath + subreddit.Name[3:] + "/"
+      }
+      err := os.MkdirAll(outputPath, 0755)
+      util.Check(err)
 
-    endTime := time.Now()
-    fmt.Println("Total time taken:", endTime.Sub(startTime))
+      // Download to folder
+      var wg sync.WaitGroup
+      startTime := time.Now()
+
+      postsPerThread := len(posts)/config.MaxThreads
+      currentStart, currentEnd := 0, 0
+      remainder := len(posts)%config.MaxThreads
+      for i := 0; i < config.MaxThreads; i++ {
+        currentEnd = currentStart + postsPerThread
+        if remainder > 0 {
+          currentEnd++
+         remainder--
+        }
+        wg.Add(1)
+        go downloadToFolder(outputPath, posts[currentStart: currentEnd], subreddit, &wg)
+        currentStart = currentEnd
+      }
+
+      // Block and wait for go routines to complete
+      wg.Wait()
+
+      endTime := time.Now()
+      fmt.Println("Total time taken:", endTime.Sub(startTime))
+    }
   }
 }
 
