@@ -42,6 +42,8 @@ type SubredditConfig struct {
   Count int `json:"count"`
   SortBy string `json:"sortBy"`
   Time string `json:"time"`
+  After string `json:"after"`
+  Before string `json:"before"`
   MinScore int `json:"minScore"`
   SearchFor string `json:"searchFor"`
   CustomFolderName string `json:"customFolderName"`
@@ -94,6 +96,8 @@ func main() {
       // Get download links
       newPosts := []reddit.Post(listing.Data.Children)
       posts = append(posts, newPosts...)
+      subreddit.After = listing.Data.After
+      subreddit.Before = listing.Data.Before
       if len(newPosts) < 100 {
         subreddit.Limit = 0
       }
@@ -171,7 +175,9 @@ func configSettings(filename string) Configuration {
 
     // Setup and encode the JSON
     var b []byte
-    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, 0, "new", "all", 0, "", ""}, SubredditConfig{"/r/subreddit2", 20, 0, "hot", "all", 0, "", ""})
+    s1 := SubredditConfig{"/r/subreddit1", 50, 0, "new", "all", "", "", 0, "", ""}
+    s2 := SubredditConfig{"/r/subreddit2", 20, 0, "hot", "all", "", "", 0, "", ""}
+    configuration.Subreddits = append(configuration.Subreddits, s1, s2)
     configuration.OutputPath = "Path/To/Output/Folder"
     configuration.MaxThreads = defaultMaxThreads
     b, err = json.MarshalIndent(configuration, "", "    ")
@@ -224,9 +230,16 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
   // Limiting
   values.Set("limit", "20")
   if subreddit.Limit != 0 {
+    values.Set("limit", "100")
+  } else if subreddit.Limit != 0 {
     values.Set("limit", strconv.Itoa(subreddit.Limit))
   }
+
+  // Pagination
   values.Set("count", strconv.Itoa(subreddit.Count))
+  if subreddit.After != "" {
+    values.Set("after", subreddit.After)
+  }
 
   // Searching
   if subreddit.SearchFor != "" {

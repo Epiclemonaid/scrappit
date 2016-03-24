@@ -33,8 +33,11 @@ type Post struct {
 }
 
 type ListingJson struct {
+  Kind string `json:"kind"`
   Data struct {
     Children []Post `json:"children"`
+    After string `json:"after"`
+    Before string `json:"before"`
   } `json:"data"`
 }
 
