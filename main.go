@@ -39,6 +39,7 @@ type Configuration struct {
 type SubredditConfig struct {
   Name string `json:"subredditName"`
   Limit int `json:"numberOfPosts"`
+  Count int `json:"count"`
   SortBy string `json:"sortBy"`
   Time string `json:"time"`
   MinScore int `json:"minScore"`
@@ -78,8 +79,10 @@ func main() {
 
       // Modify limit, as reddit only returns 100 max per request
       if subreddit.Limit > 100 {
+        subreddit.Count += 100
         subreddit.Limit -= 100
       } else {
+        subreddit.Count += subreddit.Limit
         subreddit.Limit = 0
       }
 
@@ -168,7 +171,7 @@ func configSettings(filename string) Configuration {
 
     // Setup and encode the JSON
     var b []byte
-    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, "new", "all", 0, "", ""}, SubredditConfig{"/r/subreddit2", 20, "hot", "all", 0, "", ""})
+    configuration.Subreddits = append(configuration.Subreddits, SubredditConfig{"/r/subreddit1", 50, 0, "new", "all", 0, "", ""}, SubredditConfig{"/r/subreddit2", 20, 0, "hot", "all", 0, "", ""})
     configuration.OutputPath = "Path/To/Output/Folder"
     configuration.MaxThreads = defaultMaxThreads
     b, err = json.MarshalIndent(configuration, "", "    ")
@@ -223,6 +226,7 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
   if subreddit.Limit != 0 {
     values.Set("limit", strconv.Itoa(subreddit.Limit))
   }
+  values.Set("count", strconv.Itoa(subreddit.Count))
 
   // Searching
   if subreddit.SearchFor != "" {
