@@ -1,4 +1,4 @@
-# Reddit Scraper
+# Scrappit
 
 * Created by Curtis Li
 * A scraper for www.reddit.com, which downloads posts, images and gifs for offline viewing.
