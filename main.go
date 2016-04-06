@@ -49,6 +49,12 @@ type SubredditConfig struct {
   CustomFolderName string `json:"customFolderName"`
 }
 
+type ScrapeData struct {
+  Subreddit string `json:"subreddit"`
+  After string `json:"after"`
+  Before string `json:"before"`
+}
+
 
 /******************************************
  *                                        *
@@ -68,6 +74,8 @@ func main() {
     fmt.Println(subreddit.Name)
 
     posts := []reddit.Post{}
+    scrapeData := ScrapeData{}
+    scrapeData.Subreddit = subreddit.Name
 
     if subreddit.Limit == 0 {
       subreddit.Limit = 20
@@ -229,7 +237,7 @@ func createRedditJsonReq(subreddit SubredditConfig) string {
 
   // Limiting
   values.Set("limit", "20")
-  if subreddit.Limit != 0 {
+  if subreddit.Limit > 100 {
     values.Set("limit", "100")
   } else if subreddit.Limit != 0 {
     values.Set("limit", strconv.Itoa(subreddit.Limit))

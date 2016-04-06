@@ -20,8 +20,10 @@ import (
  ******************************************/
 
 type Post struct {
+  Kind string `json:"kind"`
   Data struct {
     Domain string `json:"domain"`
+    Id string `json:"id"`
     Name string `json:"name"`
     Permalink string `json:"permalink"`
     Score int `json:"score"`
@@ -78,8 +80,6 @@ func GetDownloadPost(post Post) DownloadPost {
 
   // Regex
   staticRegex, _ := regexp.Compile(`\.(jpeg|jpg|gif|webm|png)$`)
-
-  fmt.Println(post.Data.Url)
 
   // Find the URL type
   switch {
